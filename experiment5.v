@@ -52,7 +52,6 @@ enum logic [3:0] {
 } state;
 
 logic [3:0] data_counter;
-logic [3:0] line_counter;
 
 logic [8:0] data_reg [15:0];
 logic [8:0] data_reg_mem [15:0];
@@ -68,11 +67,13 @@ logic [7:0] LCD_code;
 logic [3:0] LCD_position;
 logic LCD_line;
 logic char_case_mode;
+logic [3:0] detect;
+logic [3:0] line_counter;
 
 logic LCD_start;
 logic LCD_done;
 
-logic [6:0] value_7_segment[3:0];
+logic [6:0] value_7_segment[4:0];
 
 assign resetn = ~SWITCH_I[17];
 
@@ -94,7 +95,7 @@ PS2_to_LCD_ROM	PS2_to_LCD_ROM_inst (
 	.address ( data_reg[15] ),
 	.clock ( CLOCK_50_I ),
 	.q ( LCD_code )
-	);skinny puppy
+	);
 
 // LCD unit
 LCD_controller LCD_unit (
@@ -123,7 +124,9 @@ always_ff @ (posedge CLOCK_50_I or negedge resetn) begin
 		PS2_code_ready_buf <= 1'b0;
 		LCD_position <= 4'h0;
 		data_counter <= 4'd0;
-		data_reg[15] <= 9'h00;		// For loops could be used here as Nicolici said in class 
+		line_counter <= 4'd0;
+		detect <= 4'h0;
+		data_reg[15] <= 9'h00; 		// Again for loops could be used here next time and concatenation at a later date instead of expanding the bit ranges
 		data_reg[14] <= 9'h00;
 		data_reg[13] <= 9'h00;
 		data_reg[12] <= 9'h00;
@@ -138,7 +141,25 @@ always_ff @ (posedge CLOCK_50_I or negedge resetn) begin
 		data_reg[3] <= 9'h00;
 		data_reg[2] <= 9'h00;
 		data_reg[1] <= 9'h00;
-		data_reg[0] <= 9'h00;		
+		data_reg[0] <= 9'h00;
+
+		data_reg_mem[15] <= 9'h00;		// For loops could be used here as Nicolici said in class 
+		data_reg_mem[14] <= 9'h00;
+		data_reg_mem[13] <= 9'h00;
+		data_reg_mem[12] <= 9'h00;
+		data_reg_mem[11] <= 9'h00;
+		data_reg_mem[10] <= 9'h00;
+		data_reg_mem[9] <= 9'h00;
+		data_reg_mem[8] <= 9'h00;
+		data_reg_mem[7] <= 9'h00;
+		data_reg_mem[6] <= 9'h00;
+		data_reg_mem[5] <= 9'h00;
+		data_reg_mem[4] <= 9'h00;
+		data_reg_mem[3] <= 9'h00;
+		data_reg_mem[2] <= 9'h00;
+		data_reg_mem[1] <= 9'h00;
+		data_reg_mem[0] <= 9'h00;
+		
 	end else begin
 		PS2_code_ready_buf <= PS2_code_ready;		
 
@@ -181,15 +202,44 @@ always_ff @ (posedge CLOCK_50_I or negedge resetn) begin
 				else if (char_case_mode == 1'b0) PS2_code[8] <= 1'b0;
 				
 			if (PS2_code_ready && ~PS2_code_ready_buf && PS2_make_code == 1'b1) begin
+				
+				
 
 				if ((PS2_code != 9'h059) && (PS2_code != 9'h012) && (PS2_code != 9'h159) && (PS2_code != 9'h112))begin
 				
+				
+				detect <= 4'h0;
 				if (data_counter < 4'd15) begin
 					data_counter <= data_counter + 4'd1;
 				end else begin
-					// Send the 16 data to LCD
+					// Send the 4 data to LCD
 					data_counter <= 4'd0;
 					line_counter <= line_counter + 1'd1;
+					
+					data_reg_mem[15] <= data_reg[15];
+					data_reg_mem[14] <= data_reg[14];
+					data_reg_mem[13] <= data_reg[13];
+					data_reg_mem[12] <= data_reg[12];
+					data_reg_mem[11] <= data_reg[11];
+					data_reg_mem[10] <= data_reg[10];
+					data_reg_mem[9] <= data_reg[9];
+					data_reg_mem[8] <= data_reg[9];
+					data_reg_mem[7] <= data_reg[7];
+					data_reg_mem[6] <= data_reg[6];
+					data_reg_mem[5] <= data_reg[5];
+					data_reg_mem[4] <= data_reg[4];
+					data_reg_mem[3] <= data_reg[3];
+					data_reg_mem[2] <= data_reg[2];
+					data_reg_mem[1] <= data_reg[1];
+					data_reg_mem[0] <= data_reg[0];
+					
+					
+					if(line_counter == 4'd1) begin		//could have used a flag here but was too lazy when I realized that I could
+					line_counter <= 1'd0;
+						if( (data_reg[15][7:0] == data_reg_mem[15][7:0]) && (data_reg[14][7:0] == data_reg_mem[14][7:0]) && (data_reg[13][7:0] == data_reg_mem[13][7:0]) && (data_reg[12][7:0] == data_reg_mem[12][7:0]) && (data_reg[11][7:0] == data_reg_mem[11][7:0]) && (data_reg[10][7:0] == data_reg_mem[10][7:0]) && (data_reg[9][7:0] == data_reg_mem[9][7:0]) && (data_reg[8][7:0] == data_reg_mem[8][7:0]) && (data_reg[7][7:0] == data_reg_mem[7][7:0]) && (data_reg[6][7:0] == data_reg_mem[6][7:0]) && (data_reg[5][7:0] == data_reg_mem[5][7:0]) && (data_reg[4][7:0] == data_reg_mem[4][7:0]) && (data_reg[3][7:0] == data_reg_mem[3][7:0]) && (data_reg[2][7:0] == data_reg_mem[2][7:0]) && (data_reg[1][7:0] == data_reg_mem[1][7:0]) && (data_reg[0][7:0] == data_reg_mem[0][7:0])) begin
+							detect <= 4'hd;
+						end
+					end
 					
 					state <= S_LCD_WAIT_ROM_UPDATE;
 				end
@@ -326,6 +376,12 @@ end
 assign LED_GREEN_O = LCD_instruction;
 assign LED_RED_O = {resetn, 16'd0, PS2_make_code};
 
+convert_hex_to_seven_segment unit4 (
+	.hex_value(detect), 
+	.converted_value(value_7_segment[4])
+);
+
+
 convert_hex_to_seven_segment unit3 (
 	.hex_value(PS2_code[8]), 
 	.converted_value(value_7_segment[3])
@@ -353,6 +409,6 @@ assign	SEVEN_SEGMENT_N_O[0] = value_7_segment[0],
 		SEVEN_SEGMENT_N_O[4] = value_7_segment[2],
 		SEVEN_SEGMENT_N_O[5] = 7'h7f,
 		SEVEN_SEGMENT_N_O[6] = 7'h7f,
-		SEVEN_SEGMENT_N_O[7] = char_case_mode;
+		SEVEN_SEGMENT_N_O[7] = value_7_segment[4];
 		
 endmodule
